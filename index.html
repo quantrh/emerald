@@ -47,6 +47,7 @@
       <option value="Monday">Thứ Hai</option>
       <option value="Tuesday">Thứ Ba</option>
       <option value="Wednesday">Thứ Tư</option>
+      <!-- Bổ sung các ngày khác nếu cần -->
     </select>
 
     <label for="filter-period">Chọn thời gian:</label>
@@ -72,4 +73,122 @@
     const periodFilter = document.getElementById('filter-period');
     const searchInput = document.getElementById('search');
     const resetBtn = document.getElementById('reset');
-    const counter = document.getElementById('e
+    const counter = document.getElementById('event-counter');
+    const scrollBtn = document.getElementById('scroll-top');
+
+    async function loadEvents() {
+      try {
+        // Sửa tên file JSON cho đúng
+        const res = await fetch('events.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        eventsData = await res.json();
+
+        // Tách, gán thêm các trường cần thiết
+        eventsData.forEach(e => {
+          // Lấy ngày trong tuần
+          e.day = e.time.split(',')[0].trim();
+
+          // Lấy label ngày (Month + Day)
+          const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
+          e.dateLabel = dateMatch
+            ? dateMatch[1]            // Ví dụ "May 19"
+            : e.time.split(',')[1]?.split('-')[0].trim();
+
+          // Xác định buổi dựa trên giờ bắt đầu
+          const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
+          if (startMatch) {
+            let hour = parseInt(startMatch[1], 10);
+            const ampm = startMatch[3];
+            if (ampm === 'PM' && hour < 12) hour += 12;
+            if (ampm === 'AM' && hour === 12) hour = 0;
+            e.period = hour < 12
+              ? 'Morning'
+              : hour < 17
+                ? 'Afternoon'
+                : 'Evening';
+          } else {
+            e.period = 'All';
+          }
+        });
+
+        render();
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        counter.textContent = 'Không thể tải lịch. Vui lòng kiểm tra tên file JSON hoặc đường dẫn.';
+      }
+    }
+
+    function render() {
+      agenda.innerHTML = '';
+      let filtered = eventsData
+        .filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
+        .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
+
+      const query = searchInput.value.trim().toLowerCase();
+      if (query) {
+        filtered = filtered.filter(e =>
+          (`${e.id} ${e.title} ${e.rawDesc}`).toLowerCase().includes(query)
+        );
+      }
+
+      counter.textContent = `${filtered.length} sự kiện tìm thấy`;
+
+      const grouped = {};
+      filtered.forEach(e => {
+        if (!grouped[e.dateLabel]) grouped[e.dateLabel] = [];
+        grouped[e.dateLabel].push(e);
+      });
+
+      Object.keys(grouped).forEach(date => {
+        const section = document.createElement('div');
+        section.className = 'day-section';
+        const header = document.createElement('div');
+        header.className = 'day-header';
+        header.textContent = date;
+        section.appendChild(header);
+
+        grouped[date].forEach(e => {
+          const card = document.createElement('div');
+          card.className = 'event-card';
+          card.innerHTML = `
+            <div class="event-id">[${e.id}]</div>
+            <p class="title">${e.title}</p>
+            <div class="times">${e.time}</div>
+            <div class="description"><p>${e.rawDesc}</p></div>
+            <div class="location">Location: ${e.location || ''}</div>
+            <button class="add-calendar" onclick="addToCalendar('${e.id}')">THÊM VÀO LỊCH</button>
+          `;
+          section.appendChild(card);
+        });
+
+        agenda.appendChild(section);
+      });
+    }
+
+    function addToCalendar(id) {
+      alert('Add to calendar: ' + id);
+    }
+
+    // Gắn sự kiện thay đổi filter và tìm kiếm
+    [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
+    searchInput.addEventListener('input', render);
+    resetBtn.addEventListener('click', () => {
+      dayFilter.value = 'All';
+      periodFilter.value = 'All';
+      searchInput.value = '';
+      render();
+    });
+
+    // Nút cuộn lên đầu
+    window.addEventListener('scroll', () => {
+      scrollBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
+    });
+    scrollBtn.addEventListener('click', () =>
+      window.scrollTo({ top: 0, behavior: 'smooth' })
+    );
+
+    // Khởi tạo
+    loadEvents();
+  </script>
+</body>
+</html>
