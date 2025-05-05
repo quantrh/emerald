@@ -47,7 +47,7 @@
       <option value="Monday">Thứ Hai</option>
       <option value="Tuesday">Thứ Ba</option>
       <option value="Wednesday">Thứ Tư</option>
-      <!-- Bổ sung các ngày khác nếu cần -->
+      <!-- Bổ sung thêm nếu có Thứ Năm, Thứ Sáu… -->
     </select>
 
     <label for="filter-period">Chọn thời gian:</label>
@@ -78,37 +78,34 @@
 
     async function loadEvents() {
       try {
-        // Sửa tên file JSON cho đúng
         const res = await fetch('events.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         eventsData = await res.json();
 
-        // Tách, gán thêm các trường cần thiết
         eventsData.forEach(e => {
-          // Lấy ngày trong tuần
+          // 1. Ngày trong tuần
           e.day = e.time.split(',')[0].trim();
 
-          // Lấy label ngày (Month + Day)
+          // 2. Tách label ngày (Month + Day)
           const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
-          e.dateLabel = dateMatch
-            ? dateMatch[1]            // Ví dụ "May 19"
-            : e.time.split(',')[1]?.split('-')[0].trim();
+          e.dateLabel = dateMatch ? dateMatch[1] : '';
 
-          // Xác định buổi dựa trên giờ bắt đầu
+          // 3. Xác định buổi (period) từ giờ bắt đầu
           const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
           if (startMatch) {
             let hour = parseInt(startMatch[1], 10);
-            const ampm = startMatch[3];
-            if (ampm === 'PM' && hour < 12) hour += 12;
-            if (ampm === 'AM' && hour === 12) hour = 0;
-            e.period = hour < 12
-              ? 'Morning'
-              : hour < 17
-                ? 'Afternoon'
-                : 'Evening';
+            if (startMatch[3] === 'PM' && hour < 12) hour += 12;
+            if (startMatch[3] === 'AM' && hour === 12) hour = 0;
+            e.period = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
           } else {
             e.period = 'All';
           }
+
+          // 4. **Chèn khoảng trắng giữa ngày và giờ** nếu JSON thiếu
+          e.time = e.time.replace(
+            /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
+            '$1 '
+          );
         });
 
         render();
@@ -169,7 +166,6 @@
       alert('Add to calendar: ' + id);
     }
 
-    // Gắn sự kiện thay đổi filter và tìm kiếm
     [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
     searchInput.addEventListener('input', render);
     resetBtn.addEventListener('click', () => {
@@ -179,7 +175,6 @@
       render();
     });
 
-    // Nút cuộn lên đầu
     window.addEventListener('scroll', () => {
       scrollBtn.style.display = window.scrollY > 200 ? 'block' : 'none';
     });
@@ -187,7 +182,6 @@
       window.scrollTo({ top: 0, behavior: 'smooth' })
     );
 
-    // Khởi tạo
     loadEvents();
   </script>
 </body>
