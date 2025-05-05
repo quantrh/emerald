@@ -77,39 +77,43 @@
     const scrollBtn = document.getElementById('scroll-top');
 
     async function loadEvents() {
-      try {
-        const res = await fetch('events.json');
-        if (!res.ok) throw new Error(`HTTP ${res.status}`);
-        eventsData = await res.json();
+  const res = await fetch('events.json');
+  eventsData = await res.json();
 
-        eventsData.forEach(e => {
-          // 1. Ngày trong tuần
-          e.day = e.time.split(',')[0].trim();
+  eventsData.forEach(e => {
+    // 1. Bổ sung khoảng trắng giữa "May 19" và giờ nếu JSON thiếu
+    e.time = e.time.replace(
+      /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
+      '$1 '
+    );
 
-          // 2. Tách label ngày (Month + Day)
-          const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
-          e.dateLabel = dateMatch ? dateMatch[1] : '';
+    // 2. Trích xuất ngày trong tuần
+    e.day = e.time.split(',')[0].trim();
 
-          // 3. Xác định buổi (period) từ giờ bắt đầu
-          const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
-          if (startMatch) {
-            let hour = parseInt(startMatch[1], 10);
-            if (startMatch[3] === 'PM' && hour < 12) hour += 12;
-            if (startMatch[3] === 'AM' && hour === 12) hour = 0;
-            e.period = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
-          } else {
-            e.period = 'All';
-          }
+    // 3. Trích xuất label (Month + Day)
+    const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
+    e.dateLabel = dateMatch ? dateMatch[1] : '';
 
-          // 4. **Chèn khoảng trắng giữa ngày và giờ** nếu JSON thiếu
-          e.time = e.time.replace(
-            /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
-            '$1 '
-          );
-        });
+    // 4. Xác định buổi dựa trên giờ bắt đầu (giờ đã đúng vì đã có space)
+    const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
+    if (startMatch) {
+      let hour = parseInt(startMatch[1], 10);
+      const ampm = startMatch[3];
+      if (ampm === 'PM' && hour < 12) hour += 12;
+      if (ampm === 'AM' && hour === 12) hour = 0;
+      e.period = hour < 12
+        ? 'Morning'
+        : hour < 17
+          ? 'Afternoon'
+          : 'Evening';
+    } else {
+      e.period = 'All';
+    }
+  });
 
-        render();
-      } catch (err) {
+  render();
+}
+ catch (err) {
         console.error('Failed to load events:', err);
         counter.textContent = 'Không thể tải lịch. Vui lòng kiểm tra tên file JSON hoặc đường dẫn.';
       }
