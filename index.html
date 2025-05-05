@@ -162,30 +162,33 @@
     }
 
    function addToCalendar(id) {
-  // 1. Tìm event trên mảng
+  // 1. Tìm event từ mảng
   const e = eventsData.find(ev => ev.id === id);
   if (!e) {
     return alert('Không tìm thấy sự kiện để thêm vào lịch.');
   }
 
-  // 2. Chèn khoảng trắng nếu cần, rồi trích giờ bắt đầu và kết thúc
+  // 2. Chuẩn hoá khoảng trắng như cũ
   const timeStr = e.time.replace(
     /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
     '$1 '
   );
-  const startMatch = timeStr.match(/^[^,]+,\s*[A-Za-z]+\s*\d{1,2}\s+(\d{1,2}:\d{2}\s?(?:AM|PM))/);
-  const endMatch   = timeStr.match(/-\s*(\d{1,2}:\d{2}\s?(?:AM|PM))/);
-  if (!startMatch || !endMatch) {
+
+  // 3. Dùng 1 regex duy nhất để lấy mảng ["7:30 AM", "8:00 PM"]
+  const times = timeStr.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
+  if (!times || times.length < 2) {
     return alert('Không thể trích xuất thời gian sự kiện.');
   }
+  const [startTime, endTime] = times;
 
-  // 3. Xây dựng đối tượng Date với timezone EDT (thay khi cần bằng timezone phù hợp)
-  //    Năm mình hardcode là 2025 (vì sự kiện May 19–21/2025)
-  const monthDay = timeStr.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/)[1];
-  const startDate = new Date(`${monthDay} 2025 ${startMatch[1]} EDT`);
-  const endDate   = new Date(`${monthDay} 2025 ${endMatch[1]} EDT`);
+  // 4. Lấy label date đã tính ở loadEvents()
+  const monthDay = e.dateLabel; // ví dụ "May 19"
 
-  // 4. Định dạng sang UTC string theo chuẩn ICS
+  // 5. Tạo Date object (có thể hardcode năm 2025)
+  const startDate = new Date(`${monthDay} 2025 ${startTime} EDT`);
+  const endDate   = new Date(`${monthDay} 2025 ${endTime} EDT`);
+
+  // 6. Định dạng UTC theo chuẩn ICS
   function toICS(dt) {
     const Y = dt.getUTCFullYear();
     const M = String(dt.getUTCMonth()+1).padStart(2,'0');
@@ -200,8 +203,8 @@
   const DTEND   = toICS(endDate);
   const UID     = `${id}@quantn.github.io`;
 
-  // 5. Tạo nội dung .ics
-  const icsLines = [
+  // 7. Sinh nội dung .ics
+  const ics = [
     'BEGIN:VCALENDAR',
     'VERSION:2.0',
     'PRODID:-//quantn.github.io//FIS Agenda//EN',
@@ -215,12 +218,12 @@
     `LOCATION:${e.location || ''}`,
     'END:VEVENT',
     'END:VCALENDAR'
-  ];
-  const blob = new Blob([icsLines.join('\r\n')], { type: 'text/calendar' });
+  ].join('\r\n');
+
+  // 8. Xuất file .ics
+  const blob = new Blob([ics], { type: 'text/calendar' });
   const url  = URL.createObjectURL(blob);
 
-  // 6. Trên iOS/Android: mở trực tiếp link để hệ thống tự hỏi “Add to Calendar?”
-  //    Trên desktop: tải file xuống
   if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
     window.location.href = url;
   } else {
@@ -231,10 +234,9 @@
     a.click();
     document.body.removeChild(a);
   }
-
-  // 7. Giải phóng URL
   setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
+
 
 
     [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
