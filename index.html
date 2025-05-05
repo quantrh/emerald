@@ -18,7 +18,6 @@
     .event-card { background: #fff; margin: 1rem; padding: 1rem; border-radius: 8px; position: relative; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
     .event-card .event-id { position: absolute; top: 1rem; right: 1rem; background: #e0e0e0; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem; color: #333; }
     .event-card .title { font-size: 1.25rem; font-weight: bold; margin: 0; color: #004080; }
-    .event-card .subtitle { font-style: italic; margin: 0.25rem 0 0.75rem; color: #555; }
 
     .times { font-size: 0.95rem; margin-bottom: 0.75rem; color: #555; }
     .location { font-weight: bold; margin-bottom: 1rem; color: #333; }
@@ -73,77 +72,4 @@
     const periodFilter = document.getElementById('filter-period');
     const searchInput = document.getElementById('search');
     const resetBtn = document.getElementById('reset');
-    const counter = document.getElementById('event-counter');
-    const scrollBtn = document.getElementById('scroll-top');
-
-    async function loadEvents() {
-      try {
-        const res = await fetch('events.json');
-        eventsData = await res.json();
-        render();
-      } catch (err) {
-        console.error('Failed to load events:', err);
-        counter.textContent = 'Không thể tải lịch. Vui lòng thử lại sau.';
-      }
-    }
-
-    function render() {
-      agenda.innerHTML = '';
-      let filtered = eventsData
-        .filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
-        .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
-      const query = searchInput.value.trim().toLowerCase();
-      if (query) {
-        filtered = filtered.filter(e => (`${e.id} ${e.title} ${e.rawDesc}`).toLowerCase().includes(query));
-      }
-      counter.textContent = `${filtered.length} sự kiện tìm thấy`;
-
-      const grouped = {};
-      filtered.forEach(e => {
-        if (!grouped[e.dateLabel]) grouped[e.dateLabel] = [];
-        grouped[e.dateLabel].push(e);
-      });
-
-      Object.keys(grouped).forEach(date => {
-        const section = document.createElement('div');
-        section.className = 'day-section';
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        header.textContent = date;
-        section.appendChild(header);
-
-        grouped[date].forEach(e => {
-          const card = document.createElement('div');
-          card.className = 'event-card';
-          card.innerHTML = `
-            <div class="event-id">[${e.id}]</div>
-            <p class="title">${e.title}</p>
-            <div class="times">
-              <div>${e.startEDT} EDT</div>
-              <div>${e.startLocal} (GMT+7, Việt Nam)</div>
-            </div>
-            <div class="description"><p>${e.rawDesc}</p></div>
-            <div class="location">Location: ${e.location || ''}</div>
-            <button class="add-calendar" onclick="addToCalendar('${e.id}')">THÊM VÀO LỊCH</button>
-          `;
-          section.appendChild(card);
-        });
-
-        agenda.appendChild(section);
-      });
-    }
-
-    function addToCalendar(id) {
-      alert('Add to calendar: ' + id);
-    }
-
-    [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
-    searchInput.addEventListener('input', render);
-    resetBtn.addEventListener('click', () => { dayFilter.value = 'All'; periodFilter.value = 'All'; searchInput.value = ''; render(); });
-    window.addEventListener('scroll', () => { scrollBtn.style.display = window.scrollY > 200 ? 'block' : 'none'; });
-    scrollBtn.addEventListener('click', () => window.scrollTo({ top: 0, behavior: 'smooth' }));
-
-    loadEvents();
-  </script>
-</body>
-</html>
+    const counter = document.getElementById('e
