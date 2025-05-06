@@ -16,19 +16,7 @@
     .day-header { background: #2e7d32; color: #fff; padding: 0.75rem 1rem; font-size: 1.25rem; }
 
     .event-card { background: #fff; margin: 1rem; padding: 1rem; border-radius: 8px; position: relative; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    .event-card .event-id { position: absolute; top: 1rem; right: 1rem; background: #e0e0e0; padding: 0.25rem 0.5rem; border-radius: 4px; font-size: 0.9rem; color: #333; }
-    .event-card .title { font-size: 1.25rem; font-weight: bold; margin: 0; color: #004080; }
-
-    .times { font-size: 0.95rem; margin-bottom: 0.75rem; color: #555; }
-    .location { font-weight: bold; margin-bottom: 1rem; color: #333; }
-
-    .description p { margin: 0.5rem 0; color: #333; }
-
-    .add-calendar { width: 100%; padding: 0.75rem; background: #388e3c; border: none; border-radius: 4px; font-size: 1rem; color: #fff; cursor: pointer; }
-    .add-calendar:hover { background: #2e7d32; }
-
-    .scroll-top { position: fixed; bottom: 1rem; right: 1rem; display: none; padding: 0.75rem; background: #004080; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-  /* Ẩn Mã sự kiện (ID badge) */
+    /* Ẩn badge ID */
     .event-card .event-id { display: none; }
     .event-card .title { font-size: 1.25rem; font-weight: bold; margin: 0; color: #004080; }
 
@@ -41,8 +29,7 @@
     .add-calendar:hover { background: #2e7d32; }
 
     .scroll-top { position: fixed; bottom: 1rem; right: 1rem; display: none; padding: 0.75rem; background: #004080; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
-    
-    
+
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: stretch; }
       .event-card { margin: 0.5rem; }
@@ -61,7 +48,6 @@
       <option value="Monday">Thứ Hai</option>
       <option value="Tuesday">Thứ Ba</option>
       <option value="Wednesday">Thứ Tư</option>
-      <!-- Bổ sung thêm nếu có Thứ Năm, Thứ Sáu… -->
     </select>
 
     <label for="filter-period">Chọn thời gian:</label>
@@ -71,6 +57,10 @@
       <option value="Afternoon">Buổi chiều (12:00 - 17:00)</option>
       <option value="Evening">Buổi tối (sau 17:00)</option>
     </select>
+
+    <label for="id-filter">Lọc theo ID:</label>
+    <input type="text" id="id-filter" placeholder="Nhập ID, ví dụ: 1241,1242">
+    <button id="filter-id-btn">Lọc ID</button>
 
     <input type="text" id="search" placeholder="Tìm kiếm sự kiện">
     <button id="reset">Reset</button>
@@ -85,60 +75,54 @@
     const agenda = document.getElementById('agenda');
     const dayFilter = document.getElementById('filter-day');
     const periodFilter = document.getElementById('filter-period');
+    const idFilterInput = document.getElementById('id-filter');
+    const idFilterBtn = document.getElementById('filter-id-btn');
     const searchInput = document.getElementById('search');
     const resetBtn = document.getElementById('reset');
     const counter = document.getElementById('event-counter');
     const scrollBtn = document.getElementById('scroll-top');
 
     async function loadEvents() {
-  const res = await fetch('events.json');
-  eventsData = await res.json();
-
-  eventsData.forEach(e => {
-    // 1. Bổ sung khoảng trắng giữa "May 19" và giờ nếu JSON thiếu
-    e.time = e.time.replace(
-      /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
-      '$1 '
-    );
-
-    // 2. Trích xuất ngày trong tuần
-    e.day = e.time.split(',')[0].trim();
-
-    // 3. Trích xuất label (Month + Day)
-    const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
-    e.dateLabel = dateMatch ? dateMatch[1] : '';
-
-    // 4. Xác định buổi dựa trên giờ bắt đầu (giờ đã đúng vì đã có space)
-    const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
-    if (startMatch) {
-      let hour = parseInt(startMatch[1], 10);
-      const ampm = startMatch[3];
-      if (ampm === 'PM' && hour < 12) hour += 12;
-      if (ampm === 'AM' && hour === 12) hour = 0;
-      e.period = hour < 12
-        ? 'Morning'
-        : hour < 17
-          ? 'Afternoon'
-          : 'Evening';
-    } else {
-      e.period = 'All';
+      try {
+        const res = await fetch('events.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        eventsData = await res.json();
+        eventsData.forEach(e => {
+          e.time = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
+          e.day = e.time.split(',')[0].trim();
+          const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
+          e.dateLabel = dateMatch ? dateMatch[1] : '';
+          const startMatch = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
+          if (startMatch) {
+            let hour = parseInt(startMatch[1], 10);
+            const ampm = startMatch[3];
+            if (ampm === 'PM' && hour < 12) hour += 12;
+            if (ampm === 'AM' && hour === 12) hour = 0;
+            e.period = hour < 12 ? 'Morning' : hour < 17 ? 'Afternoon' : 'Evening';
+          } else {
+            e.period = 'All';
+          }
+        });
+        render();
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        counter.textContent = 'Không thể tải lịch. Vui lòng kiểm tra tên file JSON.';
+      }
     }
-  });
-
-  render();
-}
 
     function render() {
       agenda.innerHTML = '';
-      let filtered = eventsData
-        .filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
-        .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
+      let filtered = eventsData.filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
+                              .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
 
-      const query = searchInput.value.trim().toLowerCase();
-      if (query) {
-        filtered = filtered.filter(e =>
-          (`${e.id} ${e.title} ${e.rawDesc}`).toLowerCase().includes(query)
-        );
+      const idQuery = idFilterInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (idQuery.length) {
+        filtered = filtered.filter(e => idQuery.includes(e.id));
+      }
+
+      const textQuery = searchInput.value.trim().toLowerCase();
+      if (textQuery) {
+        filtered = filtered.filter(e => (`${e.title} ${e.rawDesc}`).toLowerCase().includes(textQuery));
       }
 
       counter.textContent = `${filtered.length} sự kiện tìm thấy`;
@@ -150,16 +134,12 @@
       });
 
       Object.keys(grouped).forEach(date => {
-        const section = document.createElement('div');
-        section.className = 'day-section';
-        const header = document.createElement('div');
-        header.className = 'day-header';
-        header.textContent = date;
+        const section = document.createElement('div'); section.className = 'day-section';
+        const header = document.createElement('div'); header.className = 'day-header'; header.textContent = date;
         section.appendChild(header);
 
         grouped[date].forEach(e => {
-          const card = document.createElement('div');
-          card.className = 'event-card';
+          const card = document.createElement('div'); card.className = 'event-card';
           card.innerHTML = `
             <div class="event-id">[${e.id}]</div>
             <p class="title">${e.title}</p>
@@ -175,89 +155,36 @@
       });
     }
 
-   function addToCalendar(id) {
-  // 1. Tìm event từ mảng
-  const e = eventsData.find(ev => ev.id === id);
-  if (!e) {
-    return alert('Không tìm thấy sự kiện để thêm vào lịch.');
-  }
-
-  // 2. Chuẩn hoá khoảng trắng như cũ
-  const timeStr = e.time.replace(
-    /([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,
-    '$1 '
-  );
-
-  // 3. Dùng 1 regex duy nhất để lấy mảng ["7:30 AM", "8:00 PM"]
-  const times = timeStr.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
-  if (!times || times.length < 2) {
-    return alert('Không thể trích xuất thời gian sự kiện.');
-  }
-  const [startTime, endTime] = times;
-
-  // 4. Lấy label date đã tính ở loadEvents()
-  const monthDay = e.dateLabel; // ví dụ "May 19"
-
-  // 5. Tạo Date object (có thể hardcode năm 2025)
-  const startDate = new Date(`${monthDay} 2025 ${startTime} EDT`);
-  const endDate   = new Date(`${monthDay} 2025 ${endTime} EDT`);
-
-  // 6. Định dạng UTC theo chuẩn ICS
-  function toICS(dt) {
-    const Y = dt.getUTCFullYear();
-    const M = String(dt.getUTCMonth()+1).padStart(2,'0');
-    const D = String(dt.getUTCDate()).padStart(2,'0');
-    const h = String(dt.getUTCHours()).padStart(2,'0');
-    const m = String(dt.getUTCMinutes()).padStart(2,'0');
-    const s = String(dt.getUTCSeconds()).padStart(2,'0');
-    return `${Y}${M}${D}T${h}${m}${s}Z`;
-  }
-  const DTSTAMP = toICS(new Date());
-  const DTSTART = toICS(startDate);
-  const DTEND   = toICS(endDate);
-  const UID     = `${id}@quantn.github.io`;
-
-  // 7. Sinh nội dung .ics
-  const ics = [
-    'BEGIN:VCALENDAR',
-    'VERSION:2.0',
-    'PRODID:-//quantn.github.io//FIS Agenda//EN',
-    'BEGIN:VEVENT',
-    `UID:${UID}`,
-    `DTSTAMP:${DTSTAMP}`,
-    `DTSTART:${DTSTART}`,
-    `DTEND:${DTEND}`,
-    `SUMMARY:${e.title}`,
-    `DESCRIPTION:${e.rawDesc}`,
-    `LOCATION:${e.location || ''}`,
-    'END:VEVENT',
-    'END:VCALENDAR'
-  ].join('\r\n');
-
-  // 8. Xuất file .ics
-  const blob = new Blob([ics], { type: 'text/calendar' });
-  const url  = URL.createObjectURL(blob);
-
-  if (/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) {
-    window.location.href = url;
-  } else {
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `${id}-${e.title}.ics`;
-    document.body.appendChild(a);
-    a.click();
-    document.body.removeChild(a);
-  }
-  setTimeout(() => URL.revokeObjectURL(url), 1000);
-}
-
-
+    function addToCalendar(id) {
+      const e = eventsData.find(ev => ev.id === id);
+      if (!e) return alert('Không tìm thấy sự kiện.');
+      const timeStr = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
+      const times = timeStr.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
+      if (!times || times.length < 2) return alert('Không thể trích xuất thời gian.');
+      const [startTime, endTime] = times;
+      const startDate = new Date(`${e.dateLabel} 2025 ${startTime} EDT`);
+      const endDate   = new Date(`${e.dateLabel} 2025 ${endTime} EDT`);
+      const toICS = dt => `${dt.getUTCFullYear()}${String(dt.getUTCMonth()+1).padStart(2,'0')}${String(dt.getUTCDate()).padStart(2,'0')}T${String(dt.getUTCHours()).padStart(2,'0')}${String(dt.getUTCMinutes()).padStart(2,'0')}${String(dt.getUTCSeconds()).padStart(2,'0')}Z`;
+      const ICS = [
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//quantn.github.io//FIS Agenda//EN','BEGIN:VEVENT',
+        `UID:${id}@quantn.github.io`,`DTSTAMP:${toICS(new Date())}`,`DTSTART:${toICS(startDate)}`,`DTEND:${toICS(endDate)}`,
+        `SUMMARY:${e.title}`,`DESCRIPTION:${e.rawDesc}`,`LOCATION:${e.location||''}`,
+        'END:VEVENT','END:VCALENDAR'
+      ].join('\r\n');
+      const blob = new Blob([ICS],{type:'text/calendar'});
+      const url = URL.createObjectURL(blob);
+      if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) window.location.href = url;
+      else { const a=document.createElement('a');a.href=url;a.download=`${id}-${e.title}.ics`;document.body.appendChild(a);a.click();document.body.removeChild(a);}      
+      setTimeout(()=>URL.revokeObjectURL(url),1000);
+    }
 
     [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
+    idFilterBtn.addEventListener('click', render);
     searchInput.addEventListener('input', render);
     resetBtn.addEventListener('click', () => {
       dayFilter.value = 'All';
       periodFilter.value = 'All';
+      idFilterInput.value = '';
       searchInput.value = '';
       render();
     });
