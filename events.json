@@ -2326,5 +2326,65 @@
     "startEDT": "",
     "startLocal": "",
     "location": ""
+  },
+  {
+    "id": "206",
+    "title": "Fireside Chat: Real Success with Digital Retail Banking Solutions [206]",
+    "time": "Wednesday, May 21 2:30 PM - 3:15 PM EDT",
+    "rawDesc": "Discover how financial institutions are transforming customer experiences with our Digital Retail Banking Solutions. Hear directly from banks as they share real-world success stories, highlighting the tangible benefits and impactful outcomes these digital tools deliver. Join us for valuable insights and inspiration to meet diverse customer needs within your ecosystem. (Khám phá cách các tổ chức tài chính đang chuyển đổi trải nghiệm khách hàng bằng các Giải pháp Ngân hàng Bán lẻ Kỹ thuật số của chúng tôi. Nghe trực tiếp từ các ngân hàng khi họ chia sẻ những câu chuyện thành công thực tế, làm nổi bật những lợi ích hữu hình và kết quả có tác động mà các công cụ kỹ thuật số này mang lại. Tham gia cùng chúng tôi để có những hiểu biết sâu sắc có giá trị và nguồn cảm hứng để đáp ứng nhu cầu đa dạng của khách hàng trong hệ sinh thái của bạn.)",
+    "day": "Wednesday",
+    "period": "2:30 PM - 3:15 PM",
+    "dateLabel": "May 21, 2025",
+    "startEDT": "2:30 PM EDT",
+    "startLocal": "Thursday, May 22, 2025 1:30 AM ICT",
+    "location": ""
+  },
+  {
+    "id": "916",
+    "title": "Compliance by Design: Building Trust in Embedded Finance [916]",
+    "time": "Tuesday, May 20 2:30 PM - 3:15 PM EDT",
+    "rawDesc": "Join us for the journey through the world of embedded finance, where compliance isn't just a necessity—it's a superpower! In this session, we'll dive deep into the critical importance of compliance and reveal how FIS can be your trusty sidekick in avoiding pitfalls when partnering with fintechs. Don't miss this opportunity to become a compliance champion and lead your bank to success in the embedded finance landscape! (Tham gia cùng chúng tôi trong hành trình xuyên qua thế giới tài chính nhúng, nơi tuân thủ không chỉ là một điều cần thiết—đó là một siêu năng lực! Trong phiên này, chúng tôi sẽ đi sâu vào tầm quan trọng của tuân thủ và tiết lộ cách FIS có thể trở thành trợ thủ đắc lực giúp bạn tránh các rủi ro khi hợp tác với các fintech. Đừng bỏ lỡ cơ hội trở thành nhà vô địch tuân thủ và dẫn dắt ngân hàng của bạn thành công trong bối cảnh tài chính nhúng!)",
+    "day": "Tuesday",
+    "period": "2:30 PM - 3:15 PM",
+    "dateLabel": "May 20, 2025",
+    "startEDT": "2:30 PM EDT",
+    "startLocal": "Wednesday, May 21, 2025 1:30 AM ICT",
+    "location": ""
+  },
+  {
+    "id": "2005",
+    "title": "Spotlight Session: Payments Art of the Possible Combining AI+ Real Time +ISO [2005]",
+    "time": "Tuesday, May 20 1:15 PM - 2:00 PM EDT",
+    "rawDesc": "Payments can do much more to boost value for businesses while enhancing ROI for banks and ISVs. By using hyper-relevant, vertical-specific solutions with data from new ISO-standard payment rails, AI can address key business challenges. Join us to see how Accenture is integrating AI, ISO standards, and new payment rails to deliver tangible ROI. (Thanh toán có thể làm được nhiều hơn để tăng giá trị cho doanh nghiệp đồng thời nâng cao ROI cho các ngân hàng và ISV. Bằng cách sử dụng các giải pháp siêu liên quan, đặc thù theo ngành dọc với dữ liệu từ các luồng thanh toán theo tiêu chuẩn ISO mới, AI có thể giải quyết các thách thức kinh doanh chính. Tham gia cùng chúng tôi để xem cách Accenture đang tích hợp AI, các tiêu chuẩn ISO và các luồng thanh toán mới để mang lại ROI hữu hình.)",
+    "day": "Tuesday",
+    "period": "1:15 PM - 2:00 PM",
+    "dateLabel": "May 20, 2025",
+    "startEDT": "1:15 PM EDT",
+    "startLocal": "Wednesday, May 21, 2025 12:15 AM ICT",
+    "location": ""
+  },
+  {
+    "id": "2006",
+    "title": "Spotlight Session: Data & AI: Disruption, Transformation and Reinvention of Business Processes [2006]",
+    "time": "Wednesday, May 21 1:15 PM - 2:00 PM EDT",
+    "rawDesc": "How GenAI continues to disrupt, transform and reinvent business processes with a focus on financial services and real-world examples across front office, back office, product development and Customer Service. Let’s explore how we can move beyond the hype to unlock true ROI by approaching GenAI strategically—highlighting emerging trends (including Agentic AI), practical use cases, and lessons learned from early adopters. (Cách GenAI tiếp tục làm gián đoạn, chuyển đổi và tái tạo các quy trình kinh doanh, tập trung vào dịch vụ tài chính và các ví dụ thực tế trên bộ phận tiền sảnh, hậu cần văn phòng, phát triển sản phẩm và Dịch vụ Khách hàng. Hãy cùng khám phá cách chúng ta có thể vượt ra ngoài sự cường điệu để mở khóa ROI thực sự bằng cách tiếp cận GenAI một cách chiến lược—làm nổi bật các xu hướng mới nổi (bao gồm cả AI Tác nhân), các trường hợp sử dụng thực tế và bài học kinh nghiệm từ những người dùng sớm.)",
+    "day": "Wednesday",
+    "period": "1:15 PM - 2:00 PM",
+    "dateLabel": "May 21, 2025",
+    "startEDT": "1:15 PM EDT",
+    "startLocal": "Thursday, May 22, 2025 12:15 AM ICT",
+    "location": ""
+  },
+  {
+    "id": "3037",
+    "title": "The Harmony Gap: Finding the Financial Upside in Uncertainty [3037]",
+    "time": "Tuesday, May 20 6:30 PM - 6:50 PM EDT",
+    "rawDesc": "The Harmony Gap is FIS’ new signature research that measures the costs of, and opportunities created by, disharmony throughout the money lifecycle. To quantify these impacts, FIS collaborated with Oxford Economics to survey more than 1,000 senior business and technology leaders of large organizations in the US, the UK, and Singapore. Join this session to explore the costs and sources of disharmony, as well as organizations’ financial technology investment priorities, opportunities realized through technology investments, and the benefits and challenges of AI and embedded finance. (Khoảng cách Hòa hợp là nghiên cứu độc quyền mới của FIS nhằm đo lường chi phí và cơ hội được tạo ra bởi sự không hòa hợp trong suốt vòng đời tiền tệ. Để định lượng những tác động này, FIS đã hợp tác với Oxford Economics khảo sát hơn 1.000 lãnh đạo cấp cao về kinh doanh và công nghệ của các tổ chức lớn ở Mỹ, Anh và Singapore. Tham gia phiên này để khám phá chi phí và nguồn gốc của sự không hòa hợp, cũng như các ưu tiên đầu tư công nghệ tài chính của các tổ chức, cơ hội hiện thực hóa thông qua đầu tư công nghệ, và lợi ích cũng như thách thức của AI và tài chính nhúng.)",
+    "day": "Tuesday",
+    "period": "6:30 PM - 6:50 PM",
+    "dateLabel": "May 20, 2025",
+    "startEDT": "6:30 PM EDT",
+    "startLocal": "Wednesday, May 21, 2025 5:30 AM ICT",
+    "location": ""
   }
 ]
