@@ -28,7 +28,21 @@
     .add-calendar:hover { background: #2e7d32; }
 
     .scroll-top { position: fixed; bottom: 1rem; right: 1rem; display: none; padding: 0.75rem; background: #004080; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+  /* Ẩn Mã sự kiện (ID badge) */
+    .event-card .event-id { display: none; }
+    .event-card .title { font-size: 1.25rem; font-weight: bold; margin: 0; color: #004080; }
 
+    .times { font-size: 0.95rem; margin-bottom: 0.75rem; color: #555; }
+    .location { font-weight: bold; margin-bottom: 1rem; color: #333; }
+
+    .description p { margin: 0.5rem 0; color: #333; }
+
+    .add-calendar { width: 100%; padding: 0.75rem; background: #388e3c; border: none; border-radius: 4px; font-size: 1rem; color: #fff; cursor: pointer; }
+    .add-calendar:hover { background: #2e7d32; }
+
+    .scroll-top { position: fixed; bottom: 1rem; right: 1rem; display: none; padding: 0.75rem; background: #004080; color: #fff; border: none; border-radius: 4px; cursor: pointer; font-size: 1rem; }
+    
+    
     @media (max-width: 600px) {
       .controls { flex-direction: column; align-items: stretch; }
       .event-card { margin: 0.5rem; }
