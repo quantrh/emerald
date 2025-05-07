@@ -44,9 +44,9 @@
     <label for="filter-day">Select Day:</label>
     <select id="filter-day">
       <option value="All">All Days</option>
-      <option value="Monday">Monday 19/05</option>
-      <option value="Tuesday">Tuesday 20/05</option>
-      <option value="Wednesday">Wednesday 21/05</option>
+      <option value="Monday">Monday</option>
+      <option value="Tuesday">Tuesday</option>
+      <option value="Wednesday">Wednesday</option>
     </select>
 
     <label for="filter-period">Select Time Period:</label>
@@ -117,61 +117,108 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         eventsData = await res.json();
         eventsData.forEach(e => {
+          // Normalize time string
           e.time = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
           e.day = e.time.split(',')[0].trim();
           const m = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
           e.dateLabel = m ? m[1] : '';
-          const sm = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
-          if (sm) {
-            let hr = parseInt(sm[1],10);
-            if (sm[3]==='PM'&&hr<12) hr+=12;
-            if (sm[3]==='AM'&&hr===12) hr=0;
-            e.period = hr<12?'Morning':hr<17?'Afternoon':'Evening';
-          } else e.period='All';
+          const sm = e.time.match(/(\d{1,2}:\d{2}\s?(?:AM|PM)\s?-\s?\d{1,2}:\d{2}\s?(?:AM|PM)\s?EDT)/);
+          e.range = sm ? sm[1] : '';
+          const stMatch = e.range.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
+          if (stMatch) {
+            let hr = parseInt(stMatch[1], 10);
+            const ampm = stMatch[3];
+            if (ampm === 'PM' && hr < 12) hr += 12;
+            if (ampm === 'AM' && hr === 12) hr = 0;
+            e.period = hr < 12 ? 'Morning' : hr < 17 ? 'Afternoon' : 'Evening';
+          } else {
+            e.period = 'All';
+          }
         });
         render();
       } catch (err) {
         console.error('Failed to load events:', err);
-        counter.textContent='Unable to load events. Please check JSON file name.';
+        counter.textContent = 'Unable to load events. Please check JSON file name.';
       }
     }
 
     function render() {
-      agenda.innerHTML='';
-      let filtered=eventsData.filter(e=>dayFilter.value==='All'||e.day===dayFilter.value)
-      .filter(e=>periodFilter.value==='All'||e.period===periodFilter.value);
+      agenda.innerHTML = '';
+      let filtered = eventsData
+        .filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
+        .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
 
-      const rangeVal=rangeFilter.value;
-      if(rangeVal!=='All') filtered=filtered.filter(e=>e.time===rangeVal);
+      const rangeVal = rangeFilter.value;
+      if (rangeVal !== 'All') {
+        filtered = filtered.filter(e => e.range === rangeVal);
+      }
 
-      const idTerms=idFilterInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-      if(idTerms.length) filtered=filtered.filter(e=>idTerms.includes(e.id));
+      const idTerms = idFilterInput.value.split(',').map(s => s.trim()).filter(Boolean);
+      if (idTerms.length) {
+        filtered = filtered.filter(e => idTerms.includes(e.id));
+      }
 
-      const txt=searchInput.value.trim().toLowerCase();
-      if(txt) filtered=filtered.filter(e=>`${e.title} ${e.rawDesc}`.toLowerCase().includes(txt));
+      const txt = searchInput.value.trim().toLowerCase();
+      if (txt) {
+        filtered = filtered.filter(e => (`${e.title} ${e.rawDesc}`).toLowerCase().includes(txt));
+      }
 
-      counter.textContent=`${filtered.length} events found`;
+      counter.textContent = `${filtered.length} events found`;
 
-      const grp={};filtered.forEach(e=>{grp[e.dateLabel]||(grp[e.dateLabel]=[]);grp[e.dateLabel].push(e)});
-      Object.keys(grp).forEach(date=>{
-        const sec=document.createElement('div');sec.className='day-section';
-        const hdr=document.createElement('div');hdr.className='day-header';hdr.textContent=date;sec.appendChild(hdr);
-        grp[date].forEach(e=>{
-          const c=document.createElement('div');c.className='event-card';
-          c.innerHTML=`<div class="event-id">[${e.id}]</div><p class="title">${e.title}</p><div class="times">${e.time}</div><div class="description"><p>${e.rawDesc}</p></div><div class="location">Location: ${e.location||''}</div><button class="add-calendar" onclick="addToCalendar('${e.id}')">Add to Calendar</button>`;
+      const grouped = {};
+      filtered.forEach(e => {
+        if (!grouped[e.dateLabel]) grouped[e.dateLabel] = [];
+        grouped[e.dateLabel].push(e);
+      });
+
+      Object.keys(grouped).forEach(date => {
+        const sec = document.createElement('div'); sec.className = 'day-section';
+        const hdr = document.createElement('div'); hdr.className = 'day-header'; hdr.textContent = date;
+        sec.appendChild(hdr);
+
+        grouped[date].forEach(e => {
+          const c = document.createElement('div'); c.className = 'event-card';
+          c.innerHTML = `
+            <p class="title">${e.title}</p>
+            <div class="times">${e.range}</div>
+            <div class="description"><p>${e.rawDesc}</p></div>
+            <div class="location">Location: ${e.location || ''}</div>
+            <button class="add-calendar" onclick="addToCalendar('${e.id}')">Add to Calendar</button>
+          `;
           sec.appendChild(c);
-        });document.getElementById('agenda').appendChild(sec);
+        });
+        agenda.appendChild(sec);
       });
     }
 
-    function addToCalendar(id){const e=eventsData.find(ev=>ev.id===id);if(!e)return alert('Event not found.');const t=e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/,'$1 '),times=t.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);if(!times||times.length<2)return alert('Unable to extract event time.');const [st,et]=times,sd=new Date(`${e.dateLabel} 2025 ${st} EDT`),ed=new Date(`${e.dateLabel} 2025 ${et} EDT`),toICS=dt=>`${dt.getUTCFullYear()}${String(dt.getUTCMonth()+1).padStart(2,'0')}${String(dt.getUTCDate()).padStart(2,'0')}T${String(dt.getUTCHours()).padStart(2,'0')}${String(dt.getUTCMinutes()).padStart(2,'0')}${String(dt.getUTCSeconds()).padStart(2,'0')}Z`,ICS=['BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//quantn.github.io//FIS Agenda//EN','BEGIN:VEVENT',`UID:${id}@quantn.github.io`,`DTSTAMP:${toICS(new Date())}`,`DTSTART:${toICS(sd)}`,`DTEND:${toICS(ed)}`,`SUMMARY:${e.title}`,`DESCRIPTION:${e.rawDesc}`,`LOCATION:${e.location||''}`,'END:VEVENT','END:VCALENDAR'].join('\r\n'),blob=new Blob([ICS],{type:'text/calendar'}),url=URL.createObjectURL(blob);if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent))location.href=url;else{const a=document.createElement('a');a.href=url;a.download=`${id}-${e.title}.ics`;document.body.appendChild(a);a.click();document.body.removeChild(a)}setTimeout(()=>URL.revokeObjectURL(url),1e3)}
+    function addToCalendar(id) {
+      const e = eventsData.find(ev => ev.id === id);
+      if (!e) return alert('Event not found.');
+      const times = e.range.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
+      if (!times || times.length < 2) return alert('Unable to extract event time.');
+      const [st, et] = times;
+      const sd = new Date(`${e.dateLabel} 2025 ${st} EDT`);
+      const ed = new Date(`${e.dateLabel} 2025 ${et} EDT`);
+      const toICS = dt => `${dt.getUTCFullYear()}${String(dt.getUTCMonth()+1).padStart(2,'0')}${String(dt.getUTCDate()).padStart(2,'0')}T${String(dt.getUTCHours()).padStart(2,'0')}${String(dt.getUTCMinutes()).padStart(2,'0')}${String(dt.getUTCSeconds()).padStart(2,'0')}Z`;
+      const ICS = [
+        'BEGIN:VCALENDAR','VERSION:2.0','PRODID:-//quantn.github.io//FIS Agenda//EN','BEGIN:VEVENT',
+        `UID:${id}@quantn.github.io`,`DTSTAMP:${toICS(new Date())}`,`DTSTART:${toICS(sd)}`,`DTEND:${toICS(ed)}`,
+        `SUMMARY:${e.title}`,`DESCRIPTION:${e.rawDesc}`,`LOCATION:${e.location||''}`,
+        'END:VEVENT','END:VCALENDAR'
+      ].join('\r\n');
+      const blob = new Blob([ICS],{type:'text/calendar'});
+      const url = URL.createObjectURL(blob);
+      if(/iPhone|iPad|iPod|Android/i.test(navigator.userAgent)) location.href = url;
+      else { const a = document.createElement('a'); a.href = url; a.download = `${id}-${e.title}.ics`; document.body.appendChild(a); a.click(); document.body.removeChild(a); }
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+    }
 
-    [dayFilter, periodFilter, rangeFilter].forEach(el=>el.addEventListener('change',render));
-    idFilterBtn.addEventListener('click',render);
-    searchInput.addEventListener('input',render);
-    resetBtn.addEventListener('click',()=>{dayFilter.value='All';periodFilter.value='All';rangeFilter.value='All';idFilterInput.value='';searchInput.value='';render()});
-    window.addEventListener('scroll',()=>{scrollBtn.style.display=window.scrollY>200?'block':'none'});
-    scrollBtn.addEventListener('click',()=>window.scrollTo({top:0,behavior:'smooth'}));
+    [dayFilter, periodFilter, rangeFilter].forEach(el => el.addEventListener('change', render));
+    idFilterBtn.addEventListener('click', render);
+    searchInput.addEventListener('input', render);
+    resetBtn.addEventListener('click', () => { dayFilter.value='All'; periodFilter.value='All'; rangeFilter.value='All'; idFilterInput.value=''; searchInput.value=''; render(); });
+    window.addEventListener('scroll', () => { scrollBtn.style.display = window.scrollY > 200 ? 'block' : 'none'; });
+    scrollBtn.addEventListener('click', () => window.scrollTo({top:0,behavior:'smooth'}));
 
     loadEvents();
   </script>
