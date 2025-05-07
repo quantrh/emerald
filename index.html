@@ -1,57 +1,166 @@
-async function loadEvents() {
-  try {
-    const res = await fetch('events.json');
-    if (!res.ok) throw new Error(`HTTP ${res.status}`);
-    eventsData = await res.json();
-    eventsData.forEach(e => {
-      // Giữ nguyên phần chuẩn hóa trước đó
-      e.time = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
-      e.day = e.time.split(',')[0].trim();
-      const m = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
-      e.dateLabel = m ? m[1] : '';
-      const sm = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
-      if (sm) {
-        let hr = parseInt(sm[1],10);
-        if (sm[3]==='PM' && hr<12) hr+=12;
-        if (sm[3]==='AM' && hr===12) hr=0;
-        e.period = hr<12 ? 'Morning' : hr<17 ? 'Afternoon' : 'Evening';
-      } else {
-        e.period = 'All';
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FIS Emerald 2025 Conference Agenda</title>
+  <style>
+    /* ... giữ nguyên phần CSS như trước ... */
+  </style>
+</head>
+<body>
+  <header>
+    <h1>FIS Emerald 2025 Conference Agenda (May 19-21)</h1>
+  </header>
+
+  <div class="controls">
+    <!-- ... các bộ lọc khác giữ nguyên ... -->
+
+    <label for="filter-timeslot">Chọn khung giờ:</label>
+    <select id="filter-timeslot">
+      <option value="All">Tất cả khung giờ</option>
+      <!-- Các option chi tiết sẽ được sinh động bởi JavaScript -->
+    </select>
+
+    <!-- ... các bộ lọc ID, tìm kiếm, reset ... -->
+  </div>
+
+  <div id="event-counter"></div>
+  <div id="agenda"></div>
+  <button class="scroll-top" id="scroll-top">↑ Top</button>
+
+  <script>
+    let eventsData = [];
+    const dayFilter     = document.getElementById('filter-day');
+    const periodFilter  = document.getElementById('filter-period');
+    const timeslotFilter= document.getElementById('filter-timeslot');
+    const idFilterInput = document.getElementById('id-filter');
+    const idFilterBtn   = document.getElementById('filter-id-btn');
+    const searchInput   = document.getElementById('search');
+    const resetBtn      = document.getElementById('reset');
+    const agenda        = document.getElementById('agenda');
+    const counter       = document.getElementById('event-counter');
+    const scrollBtn     = document.getElementById('scroll-top');
+
+    // Hàm chuyển khung giờ thành phút (tính từ 0:00)
+    function parseSlotStart(slot) {
+      const m = slot.match(/^(\d{1,2}):(\d{2})\s*(AM|PM)/);
+      if (!m) return 0;
+      let h = parseInt(m[1],10), min = parseInt(m[2],10);
+      if (m[3]==='PM' && h<12) h+=12;
+      if (m[3]==='AM' && h===12) h=0;
+      return h*60 + min;
+    }
+
+    // Xây dựng danh sách option cho filter-timeslot, đã sắp xếp
+    function buildTimeSlotFilter() {
+      // Lấy tập các khung giờ duy nhất
+      const slots = Array.from(new Set(eventsData.map(e => e.timeslot)))
+                         .filter(s => s)  // loại bỏ chuỗi rỗng
+                         .sort((a, b) => parseSlotStart(a) - parseSlotStart(b));
+
+      // Reset chỉ giữ lại option "All"
+      timeslotFilter.innerHTML = '<option value="All">Tất cả khung giờ</option>';
+      // Thêm từng option theo thứ tự
+      slots.forEach(slot => {
+        const opt = document.createElement('option');
+        opt.value = slot;
+        opt.textContent = slot;
+        timeslotFilter.appendChild(opt);
+      });
+    }
+
+    async function loadEvents() {
+      try {
+        const res = await fetch('events.json');
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
+        eventsData = await res.json();
+        // Chuẩn hoá dữ liệu
+        eventsData.forEach(e => {
+          e.time = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
+          e.day = e.time.split(',')[0].trim();
+          const dateM = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
+          e.dateLabel = dateM ? dateM[1] : '';
+          const startM = e.time.match(/(\d{1,2}):(\d{2})\s?(AM|PM)/);
+          if (startM) {
+            let h = parseInt(startM[1],10);
+            if (startM[3]==='PM' && h<12) h+=12;
+            if (startM[3]==='AM' && h===12) h=0;
+            e.period = h < 12 ? 'Morning' : h < 17 ? 'Afternoon' : 'Evening';
+          } else {
+            e.period = 'All';
+          }
+          const slotM = e.time.match(/(\d{1,2}:\d{2}\s?(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s?(?:AM|PM))/);
+          e.timeslot = slotM ? slotM[1] : '';
+        });
+
+        // Bổ sung bộ lọc khung giờ đã sắp xếp
+        buildTimeSlotFilter();
+        render();
+      } catch (err) {
+        console.error('Failed to load events:', err);
+        counter.textContent = 'Không thể tải lịch. Vui lòng kiểm tra tên file JSON.';
       }
+    }
 
-      // —— MỚI ——: trích xuất khung giờ riêng
-      const slotM = e.time.match(/(\d{1,2}:\d{2}\s?(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s?(?:AM|PM)\s*EDT)/);
-      e.timeslot = slotM ? slotM[1] : '';
+    function render() {
+      agenda.innerHTML = '';
+      let filtered = eventsData
+        .filter(e => dayFilter.value==='All'        || e.day      === dayFilter.value)
+        .filter(e => periodFilter.value==='All'     || e.period   === periodFilter.value)
+        .filter(e => timeslotFilter.value==='All'   || e.timeslot === timeslotFilter.value);
+
+      const ids = idFilterInput.value.split(',').map(s=>s.trim()).filter(Boolean);
+      if (ids.length) filtered = filtered.filter(e=>ids.includes(e.id));
+
+      const kw = searchInput.value.trim().toLowerCase();
+      if (kw) filtered = filtered.filter(e=>(e.title+e.rawDesc).toLowerCase().includes(kw));
+
+      counter.textContent = `${filtered.length} sự kiện tìm thấy`;
+
+      // Nhóm theo ngày
+      const grouped = {};
+      filtered.forEach(e => {
+        if (!grouped[e.dateLabel]) grouped[e.dateLabel]=[];
+        grouped[e.dateLabel].push(e);
+      });
+      // Xuất ra DOM
+      Object.keys(grouped).forEach(date => {
+        const sec = document.createElement('div'); sec.className='day-section';
+        const hd  = document.createElement('div'); hd.className='day-header'; hd.textContent=date;
+        sec.appendChild(hd);
+        grouped[date].forEach(e=>{
+          const card = document.createElement('div'); card.className='event-card';
+          card.innerHTML = `
+            <div class="event-id">[${e.id}]</div>
+            <p class="title">${e.title}</p>
+            <div class="times">${e.time}</div>
+            <div class="description"><p>${e.rawDesc}</p></div>
+            <div class="location">Location: ${e.location||''}</div>
+            <button class="add-calendar" onclick="addToCalendar('${e.id}')">THÊM VÀO LỊCH</button>
+          `;
+          sec.appendChild(card);
+        });
+        agenda.appendChild(sec);
+      });
+    }
+
+    // Các sự kiện UI
+    [dayFilter, periodFilter, timeslotFilter].forEach(el=>el.addEventListener('change', render));
+    idFilterBtn.addEventListener('click', render);
+    searchInput.addEventListener('input', render);
+    resetBtn.addEventListener('click', () => {
+      dayFilter.value = periodFilter.value = timeslotFilter.value = 'All';
+      idFilterInput.value = searchInput.value = '';
+      render();
     });
-    render();
-  } catch (err) {
-    console.error('Failed to load events:', err);
-    counter.textContent = 'Unable to load events. Please check JSON file name.';
-  }
-}
+    window.addEventListener('scroll', ()=> {
+      scrollBtn.style.display = window.scrollY>200 ? 'block':'none';
+    });
+    scrollBtn.addEventListener('click', ()=>window.scrollTo({top:0,behavior:'smooth'}));
 
-function render() {
-  agenda.innerHTML = '';
-  let filtered = eventsData
-    .filter(e => dayFilter.value==='All'    || e.day    === dayFilter.value)
-    .filter(e => periodFilter.value==='All' || e.period === periodFilter.value);
-
-  // —— Đổi so sánh sang e.timeslot ——  
-  const rangeVal = rangeFilter.value;
-  if (rangeVal !== 'All') {
-    filtered = filtered.filter(e => e.timeslot === rangeVal);
-  }
-
-  // Các bước lọc ID và tìm kiếm giữ nguyên...
-  const idTerms = idFilterInput.value.split(',').map(s=>s.trim()).filter(Boolean);
-  if (idTerms.length) {
-    filtered = filtered.filter(e => idTerms.includes(e.id));
-  }
-  const txt = searchInput.value.trim().toLowerCase();
-  if (txt) {
-    filtered = filtered.filter(e => (`${e.title} ${e.rawDesc}`).toLowerCase().includes(txt));
-  }
-
-  counter.textContent = `${filtered.length} events found`;
-  // Phần nhóm và render ra DOM giữ nguyên...
-}
+    // Khởi động
+    loadEvents();
+  </script>
+</body>
+</html>
