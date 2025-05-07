@@ -16,7 +16,6 @@
     .day-header { background: #2e7d32; color: #fff; padding: 0.75rem 1rem; font-size: 1.25rem; }
 
     .event-card { background: #fff; margin: 1rem; padding: 1rem; border-radius: 8px; position: relative; color: #333; box-shadow: 0 2px 4px rgba(0,0,0,0.1); }
-    /* Ẩn badge ID */
     .event-card .event-id { display: none; }
     .event-card .title { font-size: 1.25rem; font-weight: bold; margin: 0; color: #004080; }
 
@@ -58,6 +57,35 @@
       <option value="Evening">Buổi tối (sau 17:00)</option>
     </select>
 
+    <label for="filter-timeslot">Chọn khung giờ:</label>
+    <select id="filter-timeslot">
+      <option value="All">Tất cả khung giờ</option>
+      <option>7:30 AM - 8:00 PM EDT</option>
+      <option>7:30 AM - 4:00 PM EDT</option>
+      <option>5:00 PM - 6:30 PM EDT</option>
+      <option>6:30 PM - 8:30 PM EDT</option>
+      <option>7:00 PM - 7:20 PM EDT</option>
+      <option>7:30 PM - 7:50 PM EDT</option>
+      <option>6:15 AM - 7:15 AM EDT</option>
+      <option>7:30 AM - 8:45 AM EDT</option>
+      <option>7:30 AM - 6:00 PM EDT</option>
+      <option>7:30 AM - 5:00 PM EDT</option>
+      <option>9:00 AM - 10:30 AM EDT</option>
+      <option>10:30 AM - 12:00 PM EDT</option>
+      <option>11:00 AM - 11:20 AM EDT</option>
+      <option>11:30 AM - 11:50 AM EDT</option>
+      <option>11:30 AM - 1:00 PM EDT</option>
+      <option>1:15 PM - 2:00 PM EDT</option>
+      <option>2:30 PM - 3:15 PM EDT</option>
+      <option>8:30 AM - 8:50 AM EDT</option>
+      <option>8:30 AM - 10:00 AM EDT</option>
+      <option>10:30 AM - 10:50 AM EDT</option>
+      <option>3:45 PM - 4:30 PM EDT</option>
+      <option>5:00 PM - 7:00 PM EDT</option>
+      <option>7:00 PM - 10:00 PM EDT</option>
+      <option>6:30 PM - 6:50 PM EDT</option>
+    </select>
+
     <label for="id-filter">Lọc theo ID:</label>
     <input type="text" id="id-filter" placeholder="Nhập ID, ví dụ: 1241,1242">
     <button id="filter-id-btn">Lọc ID</button>
@@ -75,6 +103,7 @@
     const agenda = document.getElementById('agenda');
     const dayFilter = document.getElementById('filter-day');
     const periodFilter = document.getElementById('filter-period');
+    const timeslotFilter = document.getElementById('filter-timeslot');
     const idFilterInput = document.getElementById('id-filter');
     const idFilterBtn = document.getElementById('filter-id-btn');
     const searchInput = document.getElementById('search');
@@ -88,7 +117,9 @@
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         eventsData = await res.json();
         eventsData.forEach(e => {
+          // Thêm khoảng trắng giữa ngày và giờ nếu thiếu
           e.time = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
+          // Tách ngày, label hiển thị và tính period
           e.day = e.time.split(',')[0].trim();
           const dateMatch = e.time.match(/^[^,]+,\s*([A-Za-z]+\s*\d{1,2})/);
           e.dateLabel = dateMatch ? dateMatch[1] : '';
@@ -102,6 +133,9 @@
           } else {
             e.period = 'All';
           }
+          // Trích xuất khung giờ đầy đủ
+          const slotMatch = e.time.match(/(\d{1,2}:\d{2}\s?(?:AM|PM)\s*-\s*\d{1,2}:\d{2}\s?(?:AM|PM)\s*EDT)/);
+          e.timeslot = slotMatch ? slotMatch[1] : '';
         });
         render();
       } catch (err) {
@@ -112,8 +146,10 @@
 
     function render() {
       agenda.innerHTML = '';
-      let filtered = eventsData.filter(e => dayFilter.value === 'All' || e.day === dayFilter.value)
-                              .filter(e => periodFilter.value === 'All' || e.period === periodFilter.value);
+      let filtered = eventsData
+        .filter(e => dayFilter.value === 'All'         || e.day === dayFilter.value)
+        .filter(e => periodFilter.value === 'All'      || e.period === periodFilter.value)
+        .filter(e => timeslotFilter.value === 'All'    || e.timeslot === timeslotFilter.value);
 
       const idQuery = idFilterInput.value.split(',').map(s => s.trim()).filter(Boolean);
       if (idQuery.length) {
@@ -158,8 +194,7 @@
     function addToCalendar(id) {
       const e = eventsData.find(ev => ev.id === id);
       if (!e) return alert('Không tìm thấy sự kiện.');
-      const timeStr = e.time.replace(/([A-Za-z]+,\s*[A-Za-z]+\s*\d{1,2})(?=\d)/, '$1 ');
-      const times = timeStr.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
+      const times = e.timeslot.match(/\d{1,2}:\d{2}\s?(?:AM|PM)/g);
       if (!times || times.length < 2) return alert('Không thể trích xuất thời gian.');
       const [startTime, endTime] = times;
       const startDate = new Date(`${e.dateLabel} 2025 ${startTime} EDT`);
@@ -178,12 +213,14 @@
       setTimeout(()=>URL.revokeObjectURL(url),1000);
     }
 
-    [dayFilter, periodFilter].forEach(el => el.addEventListener('change', render));
+    // Đăng ký sự kiện lọc
+    [dayFilter, periodFilter, timeslotFilter].forEach(el => el.addEventListener('change', render));
     idFilterBtn.addEventListener('click', render);
     searchInput.addEventListener('input', render);
     resetBtn.addEventListener('click', () => {
       dayFilter.value = 'All';
       periodFilter.value = 'All';
+      timeslotFilter.value = 'All';
       idFilterInput.value = '';
       searchInput.value = '';
       render();
