@@ -113,7 +113,7 @@
 
     async function loadEvents() {
       try {
-        const res = await fetch('d364e06d-62bf-4b8b-8317-936ba82b27ed.json');
+        const res = await fetch('events.json');
         if (!res.ok) throw new Error(`HTTP ${res.status}`);
         eventsData = await res.json();
         eventsData.forEach(e => {
